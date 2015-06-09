@@ -8,6 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
   costmap_2d
   dynamic_reconfigure
   roscpp
+  std_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -114,6 +116,7 @@ add_library(virtual_obstacles_moving_objects
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(simple_layers_node simple_layers_generate_messages_cpp)
+add_dependencies(virtual_obstacles_moving_objects ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(simple_layers_node

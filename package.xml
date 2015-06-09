@@ -41,7 +41,7 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   
-  <build_depend>message_runtime</build_depend>
+  <build_depend>message_generation</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>costmap_2d</build_depend>
