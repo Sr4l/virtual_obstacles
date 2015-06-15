@@ -29,6 +29,7 @@ MovingObjects::MovingObjects()
   // ToDo: make this dyn reconfigure option
   max_obstical_scalling_distance = 2.0;
   min_obstical_scalling_distance = 0.5;
+  max_velocity_of_objects = 1.0;
 }
 
 /* *********************************************************************
@@ -124,6 +125,11 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
     vx = moving_objects_store[it->first].velocity.x;
     vy = moving_objects_store[it->first].velocity.y;
     vres = std::sqrt( std::pow(vx, 2) + std::pow(vy, 2) );
+    
+    // limit vres, simple fix to not exceed map dimensions in case of
+    // reset robots position in the map
+    if (vres > max_velocity_of_objects)
+      vres = max_velocity_of_objects;
 
     // block moving obstacle center point without exception
     drawPoint(x, y);

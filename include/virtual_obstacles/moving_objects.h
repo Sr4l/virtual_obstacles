@@ -99,6 +99,7 @@ private:
 
   double_t max_obstical_scalling_distance;
   double_t min_obstical_scalling_distance;
+  double_t max_velocity_of_objects;
 
   // msg system
   ros::NodeHandle nh;
