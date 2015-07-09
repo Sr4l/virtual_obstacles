@@ -40,7 +40,7 @@ void MovingObjects::onInitialize()
   nh = ros::NodeHandle("~/" + name_);
 
   // register msg handling
-  sub = nh.subscribe("/robot_state_publisher", 100, &MovingObjects::msgMovingObjectCB, this);
+  sub = nh.subscribe("/moving_objects", 100, &MovingObjects::msgMovingObjectCB, this);
 
   // set plugin vars
   current_ = true;
@@ -103,6 +103,14 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
 
   double distance_to_origin = 0.0;
   double scale_factor = 0.0;
+  
+  // if derive unique name from namespace
+  // ToDo: make this configureable
+  if (own_unique_name == "")
+  {
+    own_unique_name = ros::this_node::getNamespace();
+    own_unique_name.erase (own_unique_name.begin(), own_unique_name.begin()+2);
+  }
 
   for (DictIt it(moving_objects_store.begin()); it != moving_objects_store.end(); it++)
   {
@@ -138,7 +146,7 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
     // low distance -> full size
     // high distance -> small (to no) size
     // ToDo: save obstacle shape in Msg
-    drawCircle(0.18*scale_factor, x, y);
+    drawCircle(0.20*scale_factor, x, y);
 
     // block moving obstacle route (smart or stupid way)
     if (moving_objects_store[it->first].route.size() > 0)
@@ -148,12 +156,14 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
         it2 != moving_objects_store[it->first].route.end(); it2++)
       {
         drawPoint(it2->pose.position.x, it2->pose.position.y);
+        //drawCircle(0.20*scale_factor, it2->pose.position.x, it2->pose.position.y);
       }
     } else {
       //block moving obstacle way, based on velocity (stupid way)
       for (int i = 0; i < 20; i++)
       {
         drawPoint(x + cos(yaw)*vres*i/10.0, y + sin(yaw)*vres*i/10.0);
+        //drawCircle(0.20*scale_factor, x + cos(yaw)*vres*i/10.0, y + sin(yaw)*vres*i/10.0);
       }
     }
   }
@@ -297,14 +307,17 @@ void MovingObjects::drawCircle(double circle_radius, double center_x, double cen
  */
 void MovingObjects::drawSimpleRectangle(double start_x, double start_y, double end_x, double end_y)
 {
-
   unsigned int pixle_start_x;
   unsigned int pixle_start_y;
   unsigned int pixle_end_x;
   unsigned int pixle_end_y;
+  
+  bool ret;
 
-  worldToMap(start_x, start_y, pixle_start_x, pixle_start_y);
-  worldToMap(end_x, end_y, pixle_end_x, pixle_end_y);
+  ret = worldToMap(start_x, start_y, pixle_start_x, pixle_start_y);
+  ROS_WARN_STREAM_COND(not ret, "world to map failed");
+  ret = worldToMap(end_x, end_y, pixle_end_x, pixle_end_y);
+  ROS_WARN_STREAM_COND(not ret, "world to map failed");
 
   for (int i = pixle_start_x; i < pixle_end_x; i++)
   {
@@ -335,8 +348,9 @@ void MovingObjects::drawPoint(double x, double y)
   unsigned int pixle_x;
   unsigned int pixle_y;
 
-  worldToMap(x, y, pixle_x, pixle_y);
-
+  bool ret = worldToMap(x, y, pixle_x, pixle_y);
+  ROS_WARN_STREAM_COND(not ret, "world to map failed");
+  
   setCost(pixle_x, pixle_y, LETHAL_OBSTACLE);
 
   // update "update area"
