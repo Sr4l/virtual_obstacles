@@ -28,7 +28,12 @@ MovingObjects::MovingObjects()
 
   // ToDo: make this dyn reconfigure option
   max_obstical_scalling_distance = 2.0;
-  min_obstical_scalling_distance = 0.5;
+  min_obstical_scalling_distance = 1.0;
+  
+  dynamic_speed_max = 0.5;
+  dynamic_speed_min = 0.1;
+  dynamic_speed = 0.0;
+  
   max_velocity_of_objects = 1.0;
 }
 
@@ -104,6 +109,10 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
   double distance_to_origin = 0.0;
   double scale_factor = 0.0;
   
+  double closest_moving_object = 1e3;
+  double speed_scaling = 0.0;
+  double calculated_speed = 0.0;
+  
   // if derive unique name from namespace
   // ToDo: make this configureable
   if (own_unique_name == "")
@@ -126,18 +135,27 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
     // calculate distance to origin in meter for dynamic scaling
     distance_to_origin = std::sqrt( std::pow((x-origin_x), 2) + std::pow((y-origin_y), 2) );
     scale_factor = ((distance_to_origin-min_obstical_scalling_distance) / (max_obstical_scalling_distance-min_obstical_scalling_distance));
+    scale_factor = std::max(0.0, scale_factor);
     scale_factor = std::min(1.0, scale_factor);
     scale_factor = 1.0 - scale_factor;
-
+    
     // short names for velocity
     vx = moving_objects_store[it->first].velocity.x;
     vy = moving_objects_store[it->first].velocity.y;
     vres = std::sqrt( std::pow(vx, 2) + std::pow(vy, 2) );
     
+    
     // limit vres, simple fix to not exceed map dimensions in case of
     // reset robots position in the map
     if (vres > max_velocity_of_objects)
       vres = max_velocity_of_objects;
+      
+    // update closest_moving_object (used for max velocity)
+    if (distance_to_origin < closest_moving_object)
+    {
+      closest_moving_object = distance_to_origin;
+      speed_scaling = 1.0 - scale_factor;
+    }
 
     // block moving obstacle center point without exception
     drawPoint(x, y);
@@ -156,17 +174,37 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
         it2 != moving_objects_store[it->first].route.end(); it2++)
       {
         drawPoint(it2->pose.position.x, it2->pose.position.y);
-        //drawCircle(0.20*scale_factor, it2->pose.position.x, it2->pose.position.y);
+        //drawCircle(0.05, it2->pose.position.x, it2->pose.position.y);
       }
     } else {
       //block moving obstacle way, based on velocity (stupid way)
       for (int i = 0; i < 20; i++)
       {
         drawPoint(x + cos(yaw)*vres*i/10.0, y + sin(yaw)*vres*i/10.0);
-        //drawCircle(0.20*scale_factor, x + cos(yaw)*vres*i/10.0, y + sin(yaw)*vres*i/10.0);
+        //drawCircle(0.05, x + cos(yaw)*vres*i/10.0, y + sin(yaw)*vres*i/10.0);
       }
     }
   }
+  
+  // ToDo: test
+  // at time of writing there is/was no reconfigure API for C++
+  // maybe this command is very very slow and we need to only run it in case of changes
+  calculated_speed = (dynamic_speed_max - dynamic_speed_min) * speed_scaling + dynamic_speed_min;
+  if (fabs(calculated_speed - dynamic_speed) >= 0.1)
+  {
+    dynamic_speed = calculated_speed;
+    std::stringstream system_call_cmd;
+    system_call_cmd << "rosrun dynamic_reconfigure dynparam set move_base/DWAPlannerROS \"{ max_vel_x: " << calculated_speed << "}\" &";
+    //system(system_call_cmd.str().c_str());
+    // Debug code:
+    //std::cout << "set speed " << calculated_speed << std::endl;
+  }
+  else
+  {
+    // Debug code:
+    //std::cout << "keep speed " << dynamic_speed << std::endl;
+  }
+  
 
 }
 

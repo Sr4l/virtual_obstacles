@@ -3,7 +3,10 @@
 # Standard Python
 from __future__ import division
 import math
+from math import isnan
 from time import sleep
+from time import localtime, strftime
+from random import randint
 
 # ROS packages
 import roslib
@@ -45,9 +48,15 @@ class RobotState(object):
         """
         path = []
         for p in msg.poses:
-            path.append(self.tflistener.transformPose(self.source_frame, p))
+            if not (isnan(p.pose.position.x) or isnan(p.pose.position.y) or isnan(p.pose.position.z) or \
+                isnan(p.pose.orientation.x) or isnan(p.pose.orientation.y) or isnan(p.pose.orientation.z) or isnan(p.pose.orientation.w)):
+                path.append(self.tflistener.transformPose(self.source_frame, p))
+            else:
+                print "{}: Error in robot path for robot  {}".format(strftime("%d.%m.%Y %H:%M:%S", localtime()), self.unique_name)
+                return False
         
         #path = msg.poses # copy poses untransformed
+        print path
         self.route = path
         self.last_route_timestamp = rospy.Time().now()
     
@@ -57,14 +66,16 @@ class RobotState(object):
             #(trans,rot) = listener.lookupTransform(source_frame, target_frame.format(robot), rospy.Time.now())
             (trans,rot) = self.tflistener.lookupTransform(self.source_frame, self.target_frame, rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            #print "Error for robot {}".format(robot)
+            print "{}: Error own position for robot {}".format(strftime("%d.%m.%Y %H:%M:%S", localtime()), self.unique_name)
             return False
+            
             
         # Feed Kalman filter with raw values
         raw_x, raw_y = trans[:2]
         raw_orientation = euler_from_quaternion(rot)[2]
         
-        self.state.update([raw_x, raw_y, raw_orientation], 1.0/self.refresh_rate)
+        if not(isnan(raw_x) or isnan(raw_y) or isnan(raw_orientation)):
+            self.state.update([raw_x, raw_y, raw_orientation], 1.0/self.refresh_rate)
         
         # Get position, orientation and velocitys from Kalman filter
         x, y, yaw = self.state.position().tolist()[0]
@@ -94,7 +105,7 @@ def main():
     rospy.init_node('moving_objects_msg_generator')
     rate = rospy.Rate(refresh_rate)
     
-    state_pub = rospy.Publisher('moving_objects', virtual_obstacles.msg.moving_object_msg, queue_size=10)
+    state_pub = rospy.Publisher('moving_objects', virtual_obstacles.msg.moving_object_msg, queue_size=4)
     
     robot_names = ["Turtlebot1", "Turtlebot2", "Turtlebot3", "Turtlebot4"]
     
@@ -106,6 +117,12 @@ def main():
             msg = robot.build_msg()
             if msg:
                 state_pub.publish(msg)
+            else:
+                print "{}: msg_failed".format(strftime("%d.%m.%Y %H:%M:%S", localtime()))
+        
+        if randint(0,10) == 0: # WTF? ;-)
+            print "alive."
+        
         rate.sleep()
 
 if __name__ == '__main__':
