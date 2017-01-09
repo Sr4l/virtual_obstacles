@@ -28,7 +28,7 @@ class RobotState(object):
     def __init__(self, unique_name, refresh_rate):
         self.unique_name = unique_name
         self.source_frame = "/map"
-        self.target_frame = "/{}/base_link".format(self.unique_name)
+        self.target_frame = "/{}/base_footprint".format(self.unique_name)
         self.state = Kalman(1, 0.2)
         self.subscriber = False
         self.route = []
@@ -37,11 +37,11 @@ class RobotState(object):
         self.refresh_rate = refresh_rate
         
         self.tflistener = tf.TransformListener()
-    
+        
         self.subscriber = rospy.Subscriber(
             "{}/move_base/DWAPlannerROS/global_plan".format(self.unique_name),
             Path, self.handle_robot_path)
-    
+        
     def handle_robot_path(self, msg):
         """
         receive routes and save them transformed to map_frame
@@ -52,7 +52,7 @@ class RobotState(object):
                 isnan(p.pose.orientation.x) or isnan(p.pose.orientation.y) or isnan(p.pose.orientation.z) or isnan(p.pose.orientation.w)):
                 path.append(self.tflistener.transformPose(self.source_frame, p))
             else:
-                print "{}: Error in robot path for robot  {}".format(strftime("%d.%m.%Y %H:%M:%S", localtime()), self.unique_name)
+                rospy.logerr("{}: Error in robot path for robot  {}".format(strftime("%d.%m.%Y %H:%M:%S", localtime()), self.unique_name))
                 return False
         
         #path = msg.poses # copy poses untransformed
@@ -65,8 +65,9 @@ class RobotState(object):
         try:
             #(trans,rot) = listener.lookupTransform(source_frame, target_frame.format(robot), rospy.Time.now())
             (trans,rot) = self.tflistener.lookupTransform(self.source_frame, self.target_frame, rospy.Time(0))
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            print "{}: Error own position for robot {}".format(strftime("%d.%m.%Y %H:%M:%S", localtime()), self.unique_name)
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+            rospy.logerr("{}: Error own position for robot {}".format(strftime("%d.%m.%Y %H:%M:%S", localtime()), self.unique_name))
+            rospy.loginfo(e)
             return False
             
             
@@ -105,7 +106,7 @@ def main():
     rospy.init_node('moving_objects_msg_generator')
     rate = rospy.Rate(refresh_rate)
     
-    state_pub = rospy.Publisher('moving_objects', virtual_obstacles.msg.moving_object_msg, queue_size=4)
+    state_pub = rospy.Publisher('moving_objects', virtual_obstacles.msg.moving_object_msg, queue_size=100)
     
     robot_names = ["Turtlebot1", "Turtlebot2", "Turtlebot3", "Turtlebot4"]
     
@@ -118,7 +119,7 @@ def main():
             if msg:
                 state_pub.publish(msg)
             else:
-                print "{}: msg_failed".format(strftime("%d.%m.%Y %H:%M:%S", localtime()))
+                rospy.logwarn("{}: msg_failed".format(strftime("%d.%m.%Y %H:%M:%S", localtime())))
         
         if randint(0,10) == 0: # WTF? ;-)
             print "alive."
