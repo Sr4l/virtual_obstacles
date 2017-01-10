@@ -34,6 +34,9 @@ class RobotState(object):
         self.route = []
         self.last_route_timestamp = rospy.Time().now()
         self.route_timeout = rospy.Duration.from_sec(5)
+        # use only every X point in path, this safes alot of computing
+        # power, good values may change with different configs
+        self.route_skip_points = 25
         self.refresh_rate = refresh_rate
         
         self.tflistener = tf.TransformListener()
@@ -47,13 +50,16 @@ class RobotState(object):
         receive routes and save them transformed to map_frame
         """
         path = []
+        i = 0
         for p in msg.poses:
-            if not (isnan(p.pose.position.x) or isnan(p.pose.position.y) or isnan(p.pose.position.z) or \
-                isnan(p.pose.orientation.x) or isnan(p.pose.orientation.y) or isnan(p.pose.orientation.z) or isnan(p.pose.orientation.w)):
-                path.append(self.tflistener.transformPose(self.source_frame, p))
-            else:
-                rospy.logerr("{}: Error in robot path for robot  {}".format(strftime("%d.%m.%Y %H:%M:%S", localtime()), self.unique_name))
-                return False
+            i += 1
+            if i % self.route_skip_points == 0:
+                if not (isnan(p.pose.position.x) or isnan(p.pose.position.y) or isnan(p.pose.position.z) or \
+                    isnan(p.pose.orientation.x) or isnan(p.pose.orientation.y) or isnan(p.pose.orientation.z) or isnan(p.pose.orientation.w)):
+                    path.append(self.tflistener.transformPose(self.source_frame, p))
+                else:
+                    rospy.logerr("{}: Error in robot path for robot  {}".format(strftime("%d.%m.%Y %H:%M:%S", localtime()), self.unique_name))
+                    return False
         
         #path = msg.poses # copy poses untransformed
         print path
@@ -101,12 +107,12 @@ class RobotState(object):
         return msg
 
 def main():
-    refresh_rate = 10.0
+    refresh_rate = 4.0
     print "Init node"
     rospy.init_node('moving_objects_msg_generator')
     rate = rospy.Rate(refresh_rate)
     
-    state_pub = rospy.Publisher('moving_objects', virtual_obstacles.msg.moving_object_msg, queue_size=100)
+    state_pub = rospy.Publisher('moving_objects', virtual_obstacles.msg.moving_object_msg, queue_size=4)
     
     robot_names = ["Turtlebot1", "Turtlebot2", "Turtlebot3", "Turtlebot4"]
     
