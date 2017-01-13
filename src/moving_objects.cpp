@@ -413,7 +413,12 @@ void MovingObjects::deleteOldDataSets()
   for (DictIt it(moving_objects_store.begin()); it != moving_objects_store.end(); it++)
   {
     if (ros::Time::now() - moving_objects_store[it->first].last_msg >= ros::Duration(obstacle_life_time))
+    {
+      // only delete one item per round
+      // save trouble with working on modified list
       moving_objects_store.erase (it->first);
+      return;
+    }
   }
 }
 
