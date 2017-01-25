@@ -312,9 +312,22 @@ void MovingObjects::drawCircle(double circle_radius, double center_x, double cen
 
   unsigned int pixle_tmp_x;
   unsigned int pixle_tmp_y;
+  
+  bool ret;
 
-  worldToMap(center_x, center_y, pixle_center_x, pixle_center_y);
-  worldToMap(center_x + circle_radius, center_y, pixle_tmp_x, pixle_tmp_y);
+  ret = worldToMap(center_x, center_y, pixle_center_x, pixle_center_y);
+  if (not ret)
+  {
+    ROS_WARN_STREAM("world to map failed, object outside map?!");
+    return;
+  }
+  
+  ret = worldToMap(center_x + circle_radius, center_y, pixle_tmp_x, pixle_tmp_y);
+  if (not ret)
+  {
+    ROS_WARN_STREAM("world to map failed, object outside map?!");
+    return;
+  }
 
   int max_distance = pixle_tmp_x - pixle_center_x;
 
@@ -353,9 +366,18 @@ void MovingObjects::drawSimpleRectangle(double start_x, double start_y, double e
   bool ret;
 
   ret = worldToMap(start_x, start_y, pixle_start_x, pixle_start_y);
-  ROS_WARN_STREAM_COND(not ret, "world to map failed");
+  if (not ret)
+  {
+    ROS_WARN_STREAM("world to map failed, object outside map?!");
+    return;
+  }
+  
   ret = worldToMap(end_x, end_y, pixle_end_x, pixle_end_y);
-  ROS_WARN_STREAM_COND(not ret, "world to map failed");
+  if (not ret)
+  {
+    ROS_WARN_STREAM("world to map failed, object outside map?!");
+    return;
+  }
 
   for (int i = pixle_start_x; i < pixle_end_x; i++)
   {
@@ -387,7 +409,11 @@ void MovingObjects::drawPoint(double x, double y)
   unsigned int pixle_y;
 
   bool ret = worldToMap(x, y, pixle_x, pixle_y);
-  ROS_WARN_STREAM_COND(not ret, "world to map failed");
+  if (not ret)
+  {
+    ROS_WARN_STREAM("world to map failed, object outside map?!");
+    return;
+  }
   
   setCost(pixle_x, pixle_y, LETHAL_OBSTACLE);
 
