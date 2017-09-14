@@ -113,8 +113,7 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
   double speed_scaling = 0.0;
   double calculated_speed = 0.0;
   
-  // if derive unique name from namespace
-  // ToDo: make this configureable
+  // if own_unique_name set to empty string derive unique name from namespace
   if (own_unique_name == "")
   {
     own_unique_name = ros::this_node::getNamespace();
@@ -140,6 +139,7 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
     scale_factor = 1.0 - scale_factor;
     
     // short names for velocity
+    // ToDo: could use pointers here
     vx = moving_objects_store[it->first].velocity.x;
     vy = moving_objects_store[it->first].velocity.y;
     vres = std::sqrt( std::pow(vx, 2) + std::pow(vy, 2) );
@@ -149,6 +149,10 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
     // reset robots position in the map
     if (vres > max_velocity_of_objects)
       vres = max_velocity_of_objects;
+    
+    // in case of robot heading not drive direction reverse vres
+    if (vx < 0 && vy < 0)
+      vres *= -1;
       
     // update closest_moving_object (used for max velocity)
     if (distance_to_origin < closest_moving_object)
@@ -166,7 +170,7 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
     // ToDo: save obstacle shape in Msg
     drawCircle(0.20*scale_factor, x, y);
 
-    // block moving obstacle route (smart or stupid way)
+    // block moving obstacle route (smart or simple way)
     if (moving_objects_store[it->first].route.size() > 0)
     {
       // block moving obstacle planed route
@@ -177,7 +181,7 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
         //drawCircle(0.05, it2->pose.position.x, it2->pose.position.y);
       }
     } else {
-      //block moving obstacle way, based on velocity (stupid way)
+      //block moving obstacle way, based on velocity (simple way)
       for (int i = 0; i < 20; i++)
       {
         drawPoint(x + cos(yaw)*vres*i/10.0, y + sin(yaw)*vres*i/10.0);
