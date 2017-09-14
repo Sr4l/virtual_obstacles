@@ -142,17 +142,16 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
     // ToDo: could use pointers here
     vx = moving_objects_store[it->first].velocity.x;
     vy = moving_objects_store[it->first].velocity.y;
-    vres = std::sqrt( std::pow(vx, 2) + std::pow(vy, 2) );
+    //vres = std::sqrt( std::pow(vx, 2) + std::pow(vy, 2) );
     
     
-    // limit vres, simple fix to not exceed map dimensions in case of
-    // reset robots position in the map
-    if (vres > max_velocity_of_objects)
-      vres = max_velocity_of_objects;
-    
-    // in case of robot heading not drive direction reverse vres
-    if (vx < 0 && vy < 0)
-      vres *= -1;
+    // limit vx, vy, vres (i.e. repositioning robots)
+    if (vx > max_velocity_of_objects)
+      vx = max_velocity_of_objects;
+    if (vy > max_velocity_of_objects)
+      vy = max_velocity_of_objects;
+    //if (vres > max_velocity_of_objects)
+    //  vres = max_velocity_of_objects;
       
     // update closest_moving_object (used for max velocity)
     if (distance_to_origin < closest_moving_object)
@@ -184,8 +183,8 @@ void MovingObjects::placeObstalcesInMap(double origin_x, double origin_y,
       //block moving obstacle way, based on velocity (simple way)
       for (int i = 0; i < 20; i++)
       {
-        drawPoint(x + cos(yaw)*vres*i/10.0, y + sin(yaw)*vres*i/10.0);
-        //drawCircle(0.05, x + cos(yaw)*vres*i/10.0, y + sin(yaw)*vres*i/10.0);
+        drawPoint(x + vx*i/10.0, y + vy*i/10.0);
+        //drawCircle(0.05, x + vx*i/10.0, y + vy*i/10.0);
       }
     }
   }
