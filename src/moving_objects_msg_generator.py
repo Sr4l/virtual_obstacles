@@ -30,7 +30,7 @@ class RobotState(object):
         self.source_frame = "/map"
         self.target_frame = "/{}/base_footprint".format(self.unique_name)
         self.state = Kalman(1, 0.2)
-        self.subscriber = False
+        
         self.route = []
         self.last_route_timestamp = rospy.Time().now()
         self.route_timeout = rospy.Duration.from_sec(5)
@@ -43,7 +43,7 @@ class RobotState(object):
         
         self.subscriber = rospy.Subscriber(
             "{}/move_base/DWAPlannerROS/global_plan".format(self.unique_name),
-            Path, self.handle_robot_path)
+            Path, self.handle_robot_path, queue_size=1)
         
     def handle_robot_path(self, msg):
         """
@@ -112,7 +112,7 @@ def main():
     rospy.init_node('moving_objects_msg_generator')
     rate = rospy.Rate(refresh_rate)
     
-    state_pub = rospy.Publisher('moving_objects', virtual_obstacles.msg.moving_object_msg, queue_size=4)
+    state_pub = rospy.Publisher('moving_objects', virtual_obstacles.msg.moving_object_msg, queue_size=16)
     
     robot_names = ["Turtlebot1", "Turtlebot2", "Turtlebot3", "Turtlebot4"]
     

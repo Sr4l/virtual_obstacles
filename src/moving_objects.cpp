@@ -45,7 +45,7 @@ void MovingObjects::onInitialize()
   nh = ros::NodeHandle("~/" + name_);
 
   // register msg handling
-  sub = nh.subscribe("/moving_objects", 1, &MovingObjects::msgMovingObjectCB, this);
+  sub = nh.subscribe("/moving_objects", 16, &MovingObjects::msgMovingObjectCB, this);
 
   // set plugin vars
   current_ = true;
