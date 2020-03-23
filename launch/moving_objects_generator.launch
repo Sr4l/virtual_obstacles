@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="moving_objects_msg_generator" pkg="virtual_obstacles" type="moving_objects_msg_generator.py" args="" />
+</launch>
