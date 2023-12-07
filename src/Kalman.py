@@ -69,6 +69,6 @@ if __name__ == "__main__":
     
     for x in range(10):
         k.update([1.0,2.0,3.0], 0.1)
-        print x, " Pos: ", k.position()
-        print x, " Velo: ", k.velocity()
-        print 25*"="
+        print (x, " Pos: ", k.position())
+        print (x, " Velo: ", k.velocity())
+        print (25*"=")

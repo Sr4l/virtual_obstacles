@@ -62,7 +62,7 @@ class RobotState(object):
                     return False
         
         #path = msg.poses # copy poses untransformed
-        print path
+        print(path)
         self.route = path
         self.last_route_timestamp = rospy.Time().now()
     
@@ -108,7 +108,7 @@ class RobotState(object):
 
 def main():
     refresh_rate = 4.0
-    print "Init node"
+    print ("Init node")
     rospy.init_node('moving_objects_msg_generator')
     rate = rospy.Rate(refresh_rate)
     
@@ -118,7 +118,7 @@ def main():
     
     robots = [RobotState(name, refresh_rate) for name in robot_names]
     
-    print "Start loop"
+    print ("Start loop")
     while not rospy.is_shutdown():
         for robot in robots:
             msg = robot.build_msg()
@@ -128,7 +128,7 @@ def main():
                 rospy.logwarn("{}: msg_failed".format(strftime("%d.%m.%Y %H:%M:%S", localtime())))
         
         if randint(0,10) == 0: # WTF? ;-)
-            print "alive."
+            print ("alive.")
         
         rate.sleep()
 
